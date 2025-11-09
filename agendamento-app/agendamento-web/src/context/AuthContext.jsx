@@ -22,35 +22,39 @@ export const AuthProvider = ({ children }) => {
   }, [usuario]);
 
   // Função de login
-  const login = async (usuarioInput, senhaInput) => {
-    try {
-      const res = await api.post("/auth/login", {
+ const login = async (usuarioInput, senhaInput) => {
+  try {
+    const res = await api.post("/auth/login", {
+      usuario: usuarioInput,
+      senha: senhaInput,
+    });
+
+    let resposta = res.data;
+    if (Array.isArray(resposta)) resposta = resposta[0];
+    if (Array.isArray(resposta)) resposta = resposta[0];
+
+    if (resposta && resposta.status === "sucesso") {
+      setUsuario({
+        id_usuario: resposta.id_usuario || resposta.id || null,
         usuario: usuarioInput,
-        senha: senhaInput,
       });
-
-      // Trata retorno da procedure (array aninhado)
-      let resposta = res.data;
-      if (Array.isArray(resposta)) resposta = resposta[0];
-      if (Array.isArray(resposta)) resposta = resposta[0];
-
-      if (resposta && resposta.status === "sucesso") {
-        setUsuario({
-          id_usuario: resposta.id_usuario || resposta.id || null,
-          usuario: usuarioInput,
-        });
-        return { sucesso: true, mensagem: resposta.mensagem };
-      }
-
-      return {
-        sucesso: false,
-        mensagem: resposta?.mensagem || "Credenciais inválidas",
-      };
-    } catch (err) {
-      console.error("Erro no login:", err);
-      return { sucesso: false, mensagem: "Erro de conexão" };
     }
-  };
+
+    return {
+      status: resposta?.status || "erro",
+      mensagem: resposta?.mensagem || "Credenciais inválidas",
+      id_usuario: resposta?.id_usuario || null,
+    };
+  } catch (err) {
+    console.error("Erro no login:", err);
+    return {
+      status: "erro",
+      mensagem: "Erro de conexão",
+      id_usuario: null,
+    };
+  }
+};
+
 
   // Função de logout
   const logout = () => {

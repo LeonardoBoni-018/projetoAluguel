@@ -37,3 +37,28 @@ export const cadastrarUsuario = async (req, res) => {
     res.status(500).json({ status: "erro", mensagem: "Erro ao cadastrar usuário" });
   }
 };
+
+
+export const desbloquearUsuario = async (req, res) => {
+  const { id_usuario } = req.body;
+  try {
+    const [resultSets] = await db.query("CALL sp_DesbloquearUsuario(?)", [id_usuario]);
+    res.json(Array.isArray(resultSets) ? resultSets[0] : resultSets);
+  } catch (err) {
+    console.error("Erro ao desbloquear usuário:", err);
+    res.status(500).json({ status: "erro", mensagem: "Erro ao desbloquear usuário" });
+  }
+};
+
+
+export const trocarSenha = async (req, res) => {
+  const { id_usuario, nova_senha_hash } = req.body;
+  try {
+    const [resultSets] = await db.query("CALL sp_TrocarSenha(?, ?)", [id_usuario, nova_senha_hash]);
+    res.json(Array.isArray(resultSets) ? resultSets[0] : resultSets);
+  } catch (err) {
+    console.error("Erro ao trocar senha:", err);
+    res.status(500).json({ status: "erro", mensagem: "Erro ao trocar senha" });
+  }
+};
+

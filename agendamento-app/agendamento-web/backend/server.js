@@ -4,8 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { router as authRoutes } from "./routes/authRoutes.js";
 import { router as reservaRoutes } from "./routes/reservaRoutes.js";
-import { router as logRoutes } from "./routes/logRoutes.js";import { router as usuarioRoutes } from "./routes/usuarioRoutes.js";
-
+import { router as logRoutes } from "./routes/logRoutes.js";
+import { router as usuarioRoutes } from "./routes/usuarioRoutes.js";
 
 dotenv.config();
 
