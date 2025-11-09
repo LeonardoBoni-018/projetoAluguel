@@ -31,3 +31,31 @@ console.error(err);
 res.status(500).json({ status: "erro", mensagem: "Erro ao excluir reserva" });
 }
 };
+
+export const buscarReservasDoUsuario = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [resultSets] = await db.query("CALL sp_BuscarReservasDoUsuario(?)", [id]);
+    res.json({ status: "sucesso", reservas: resultSets[0] || [] });
+  } catch (err) {
+    console.error("Erro ao buscar reservas do usuário:", err);
+    res.status(500).json({ status: "erro", mensagem: "Erro ao buscar reservas" });
+  }
+};
+
+export const buscarReservasPorInstalacao = async (req, res) => {
+  const { id } = req.params;
+  const { date } = req.query;
+
+  try {
+    const [resultSets] = await db.query(
+      "CALL sp_BuscarReservasPorInstalacaoData(?, ?)",
+      [id, date]
+    );
+    res.json({ status: "sucesso", reservas: resultSets[0] || [] });
+  } catch (err) {
+    console.error("Erro ao buscar reservas:", err);
+    res.status(500).json({ status: "erro", mensagem: "Erro ao buscar reservas" });
+  }
+};
+

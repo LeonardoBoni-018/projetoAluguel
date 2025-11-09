@@ -44,7 +44,8 @@ export default function HomePage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/reserva/usuario/${uid}`);
+      const res = await fetch(`http://localhost:3000/reservas/usuario/${uid}`);
+
       const data = await res.json();
       console.log("Resposta API /reserva/usuario:", data);
       if (data && data.status === "sucesso") {

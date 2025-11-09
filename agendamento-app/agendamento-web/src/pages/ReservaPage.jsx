@@ -1,61 +1,71 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { Box, Container, Grid, TextField, Button, Alert, Typography, MenuItem, InputAdornment } from '@mui/material';
-import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import ptBR from 'date-fns/locale/pt-BR';
-import SaveIcon from '@mui/icons-material/Save';
-import PersonIcon from '@mui/icons-material/Person';
-import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
-import SchoolIcon from '@mui/icons-material/School';
-import NavBar from '../components/NavBar';
-import Card from '../components/Card';
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import {
+  Box,
+  Container,
+  Grid,
+  TextField,
+  Button,
+  Alert,
+  Typography,
+  MenuItem,
+  InputAdornment,
+} from "@mui/material";
+import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import ptBR from "date-fns/locale/pt-BR";
+import SaveIcon from "@mui/icons-material/Save";
+import PersonIcon from "@mui/icons-material/Person";
+import SportsSoccerIcon from "@mui/icons-material/SportsSoccer";
+import SchoolIcon from "@mui/icons-material/School";
+import NavBar from "../components/NavBar";
+import Card from "../components/Card";
 
 const formatDateForMySQL = (date) => {
   if (!date) return null;
-  return date.toISOString().slice(0, 19).replace('T', ' ');
+  return date.toISOString().slice(0, 19).replace("T", " ");
 };
 
 const INSTALACOES = [
-  { id: 1, nome: 'Campo 1', tipo: 'campo' },
-  { id: 2, nome: 'Campo 2', tipo: 'campo' },
-  { id: 3, nome: 'Quadra 1', tipo: 'quadra' },
-  { id: 4, nome: 'Quadra 2', tipo: 'quadra' }
+  { id: 1, nome: "Campo 1", tipo: "campo" },
+  { id: 2, nome: "Campo 2", tipo: "campo" },
+  { id: 3, nome: "Quadra 1", tipo: "quadra" },
+  { id: 4, nome: "Quadra 2", tipo: "quadra" },
 ];
 
 const CURSOS = [
-  { id: 1, nome: 'Educação Física' },
-  { id: 2, nome: 'Fisioterapia' },
-  { id: 3, nome: 'Enfermagem' },
-  { id: 4, nome: 'Medicina' },
-  { id: 5, nome: 'Psicologia' }
+  { id: 1, nome: "Educação Física" },
+  { id: 2, nome: "Fisioterapia" },
+  { id: 3, nome: "Enfermagem" },
+  { id: 4, nome: "Medicina" },
+  { id: 5, nome: "Psicologia" },
 ];
 
 export default function ReservaPage() {
   const navigate = useNavigate();
   const [inicio, setInicio] = useState(null);
   const [fim, setFim] = useState(null);
-  const [raAluno, setRaAluno] = useState('');
-  const [idInstalacao, setIdInstalacao] = useState('1');
-  const [idCurso, setIdCurso] = useState('1');
-  const [mensagem, setMensagem] = useState('');
+  const [raAluno, setRaAluno] = useState("");
+  const [idInstalacao, setIdInstalacao] = useState("1");
+  const [idCurso, setIdCurso] = useState("1");
+  const [mensagem, setMensagem] = useState("");
   const [loading, setLoading] = useState(false);
   const { usuario } = useContext(AuthContext);
 
   const [formValues, setFormValues] = useState({
-    ra_aluno: '',
-    id_instalacao: '',
+    ra_aluno: "",
+    id_instalacao: "",
     id_curso: 1, // Valor padrão para Educação Física
-    inicio: '',
-    fim: '',
+    inicio: "",
+    fim: "",
   });
 
   const [reservas, setReservas] = useState([]);
   const [slots, setSlots] = useState([]);
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     // usar data local (formato en-CA) para evitar diferenças UTC
-    return new Date().toLocaleDateString('en-CA');
+    return new Date().toLocaleDateString("en-CA");
   });
 
   // Gera slots horários de 08:00 até 23:00 (1h)
@@ -63,9 +73,11 @@ export default function ReservaPage() {
     const slotsArr = [];
     // incluir slot 23:00 -> 00:00 (h = 23)
     for (let h = 8; h <= 23; h++) {
-      const inicio = new Date(`${dateStr}T${String(h).padStart(2, '0')}:00:00`);
+      const inicio = new Date(`${dateStr}T${String(h).padStart(2, "0")}:00:00`);
       // se h == 23, fim será no dia seguinte; new Date trata isso automaticamente com ISO
-      const fim = new Date(`${dateStr}T${String(h + 1).padStart(2, '0')}:00:00`);
+      const fim = new Date(
+        `${dateStr}T${String(h + 1).padStart(2, "0")}:00:00`
+      );
       slotsArr.push({ inicio, fim, ocupado: false, ocupante: null });
     }
     return slotsArr;
@@ -76,28 +88,34 @@ export default function ReservaPage() {
     if (!dbDate) return null;
     if (dbDate instanceof Date) return dbDate;
     // "2025-11-03 23:00:00" => "2025-11-03T23:00:00"
-    const s = String(dbDate).trim().replace(' ', 'T');
+    const s = String(dbDate).trim().replace(" ", "T");
     return new Date(s);
   };
 
   // carregarReservas: mantenha log para debug
   const carregarReservas = async (instId, dateStr) => {
-    if (!instId || !dateStr) return;
-    try {
-      console.log('Carregando reservas para', instId, dateStr);
-      const res = await fetch(`http://localhost:3000/reserva/instalacao/${instId}?date=${dateStr}`);
-      const data = await res.json();
-      console.log('Reservas recebidas:', data);
-      if (data && data.status === 'sucesso') {
-        setReservas(data.reservas || []);
-      } else {
-        setReservas([]);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar reservas:', err);
+  if (!instId || !dateStr) return;
+
+  try {
+    console.log("Carregando reservas para", instId, dateStr);
+
+    const res = await fetch(
+      `http://localhost:3000/reservas/instalacao/${instId}?date=${dateStr}`
+    );
+
+    const data = await res.json();
+    console.log("Reservas recebidas:", data);
+
+    if (data && data.status === "sucesso") {
+      setReservas(data.reservas || []);
+    } else {
       setReservas([]);
     }
-  };
+  } catch (err) {
+    console.error("Erro ao buscar reservas:", err);
+    setReservas([]);
+  }
+};
 
   // Marca slots ocupados verificando overlap
   useEffect(() => {
@@ -115,7 +133,7 @@ export default function ReservaPage() {
           nome: reservado.nome_aluno || `RA ${reservado.ra_aluno}`,
           ra: reservado.ra_aluno,
           inicio: reservado.inicio,
-          fim: reservado.fim
+          fim: reservado.fim,
         };
       }
     });
@@ -134,24 +152,23 @@ export default function ReservaPage() {
 
   const reservar = async (e) => {
     e.preventDefault();
-    setMensagem('');
+    setMensagem("");
     setLoading(true);
 
     try {
-      // Log para debug
-      console.log('Dados a serem enviados:', {
+      console.log("Dados a serem enviados:", {
         ra_aluno: raAluno,
         id_instalacao: idInstalacao,
         id_curso: idCurso,
         inicio: formatDateForMySQL(inicio),
         fim: formatDateForMySQL(fim),
-        usuario_id: usuario?.id_usuario
+        created_by: usuario?.id_usuario,
       });
 
-      const response = await fetch('http://localhost:3000/reserva/criar', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/reservas/criar", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ra_aluno: parseInt(raAluno),
@@ -159,34 +176,40 @@ export default function ReservaPage() {
           id_curso: parseInt(idCurso),
           inicio: formatDateForMySQL(inicio),
           fim: formatDateForMySQL(fim),
-          usuario_id: usuario?.id_usuario
-        })
+          created_by: usuario?.id_usuario,
+        }),
       });
 
       const data = await response.json();
-      console.log('Resposta da API:', data);
+      console.log("Resposta da API:", data);
 
-      if (data.status === 'erro') {
+      if (data.status === "erro") {
         setMensagem(data.mensagem);
       } else {
-        navigate('/home');
+        navigate("/home");
       }
     } catch (error) {
-      console.error('Erro:', error);
-      setMensagem('Erro ao criar reserva');
+      console.error("Erro:", error);
+      setMensagem("Erro ao criar reserva");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
       <NavBar usuario={usuario} onLogout={() => {}} />
-      
+
       <Container maxWidth="sm" sx={{ py: 4 }}>
         <Card elevation={3}>
           <Box component="form" onSubmit={reservar} sx={{ p: 2 }}>
-            <Typography variant="h5" color="primary" gutterBottom align="center" sx={{ mb: 3 }}>
+            <Typography
+              variant="h5"
+              color="primary"
+              gutterBottom
+              align="center"
+              sx={{ mb: 3 }}
+            >
               Nova Reserva
             </Typography>
 
@@ -199,7 +222,7 @@ export default function ReservaPage() {
                   value={raAluno}
                   onChange={(e) => {
                     // Permite apenas números
-                    const value = e.target.value.replace(/\D/g, '');
+                    const value = e.target.value.replace(/\D/g, "");
                     setRaAluno(value);
                   }}
                   InputProps={{
@@ -263,7 +286,10 @@ export default function ReservaPage() {
               </Grid>
 
               <Grid item xs={12}>
-                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+                <LocalizationProvider
+                  dateAdapter={AdapterDateFns}
+                  adapterLocale={ptBR}
+                >
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <DateTimePicker
@@ -271,10 +297,10 @@ export default function ReservaPage() {
                         value={inicio}
                         onChange={setInicio}
                         slotProps={{
-                          textField: { 
+                          textField: {
                             fullWidth: true,
-                            required: true
-                          }
+                            required: true,
+                          },
                         }}
                         minTime={new Date().setHours(8, 0)}
                         maxTime={new Date().setHours(23, 0)}
@@ -286,10 +312,10 @@ export default function ReservaPage() {
                         value={fim}
                         onChange={setFim}
                         slotProps={{
-                          textField: { 
+                          textField: {
                             fullWidth: true,
-                            required: true
-                          }
+                            required: true,
+                          },
                         }}
                         minTime={new Date().setHours(8, 0)}
                         maxTime={new Date().setHours(23, 0)}
@@ -317,7 +343,7 @@ export default function ReservaPage() {
                   size="large"
                   sx={{ mt: 2 }}
                 >
-                  {loading ? 'Reservando...' : 'Confirmar Reserva'}
+                  {loading ? "Reservando..." : "Confirmar Reserva"}
                 </Button>
               </Grid>
             </Grid>
@@ -338,27 +364,44 @@ export default function ReservaPage() {
       {/* Lista de horários com status */}
       <div style={{ marginTop: 18 }}>
         <h4>Horários ({dataSelecionada})</h4>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {slots.map((slot, idx) => {
-            const inicioStr = slot.inicio.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const fimStr = slot.fim.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const inicioStr = slot.inicio.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const fimStr = slot.fim.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
             return (
-              <li key={idx} style={{
-                padding: '8px 12px',
-                borderRadius: 6,
-                marginBottom: 8,
-                background: slot.ocupado ? '#ffecec' : '#e8ffef',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
+              <li
+                key={idx}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  marginBottom: 8,
+                  background: slot.ocupado ? "#ffecec" : "#e8ffef",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <div>
-                  <strong>{inicioStr} - {fimStr}</strong>
-                  <div style={{ fontSize: 12, color: '#444' }}>
-                    {slot.ocupado ? `Ocupado por ${slot.ocupante.nome} (RA ${slot.ocupante.ra})` : 'Livre'}
+                  <strong>
+                    {inicioStr} - {fimStr}
+                  </strong>
+                  <div style={{ fontSize: 12, color: "#444" }}>
+                    {slot.ocupado
+                      ? `Ocupado por ${slot.ocupante.nome} (RA ${slot.ocupante.ra})`
+                      : "Livre"}
                   </div>
                 </div>
-                {slot.ocupado ? <span style={{ color: '#c0392b' }}>Ocupado</span> : <span style={{ color: '#27ae60' }}>Livre</span>}
+                {slot.ocupado ? (
+                  <span style={{ color: "#c0392b" }}>Ocupado</span>
+                ) : (
+                  <span style={{ color: "#27ae60" }}>Livre</span>
+                )}
               </li>
             );
           })}
