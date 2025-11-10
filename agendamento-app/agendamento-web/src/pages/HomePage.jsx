@@ -21,11 +21,15 @@ import SportsSoccerIcon from "@mui/icons-material/SportsSoccer";
 import SportsBasketballIcon from "@mui/icons-material/SportsBasketball";
 import NavBar from "../components/NavBar";
 import Card from "../components/Card";
+import TrocarSenhaModal from "../components/TrocarSenhaModal";
 
 export default function HomePage() {
   const { usuario, logout } = useContext(AuthContext);
   const [minhasReservas, setMinhasReservas] = useState([]);
   const navigate = useNavigate();
+  const [modalAberto, setModalAberto] = useState(false);
+  const abrirModalSenha = () => setModalAberto(true);
+  const fecharModalSenha = () => setModalAberto(false);
 
   const formatDisplay = (dbDate) => {
     if (!dbDate) return "";
@@ -101,11 +105,40 @@ export default function HomePage() {
     navigate("/login");
   };
 
+  const trocarSenha = async () => {
+    const nova = prompt("Digite a nova senha:");
+    if (!nova) return;
+
+    const hash = crypto.SHA256(nova).toString();
+
+    const res = await fetch("http://localhost:3000/usuario/trocar-senha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: usuario.id_usuario,
+        nova_senha_hash: hash,
+      }),
+    });
+
+    const data = await res.json();
+    alert(data.mensagem || "Senha atualizada");
+  };
+
   console.log("usuarios", usuario);
   console.log("minhasReservas", minhasReservas);
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-      <NavBar usuario={usuario} onLogout={sair} />
+      <NavBar
+        usuario={usuario}
+        onLogout={sair}
+        onChangePassword={abrirModalSenha}
+      />
+
+      <TrocarSenhaModal
+        open={modalAberto}
+        onClose={fecharModalSenha}
+        usuario={usuario}
+      />
 
       <Container sx={{ py: 4 }}>
         <Grid container spacing={3}>

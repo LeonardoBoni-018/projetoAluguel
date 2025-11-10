@@ -12,3 +12,4 @@ router.post("/cadastrar", cadastrarUsuario);
 router.post("/desbloquear", desbloquearUsuario);
 router.post("/trocar-senha", trocarSenha);
 
+
