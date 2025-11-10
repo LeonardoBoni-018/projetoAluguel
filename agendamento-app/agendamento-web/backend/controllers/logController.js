@@ -11,3 +11,18 @@ console.error(err);
 res.status(500).json({ status: "erro", mensagem: "Erro ao listar logs" });
 }
 };
+
+export const consultarLogs = async (req, res) => {
+  const { usuario_id, tipo_operacao, data } = req.query;
+  try {
+    const [resultSets] = await db.query("CALL sp_ConsultarLogs(?, ?, ?)", [
+      usuario_id || null,
+      tipo_operacao || null,
+      data || null,
+    ]);
+    res.json(resultSets);
+  } catch (err) {
+    console.error("Erro ao consultar logs:", err);
+    res.status(500).json({ status: "erro", mensagem: "Erro ao consultar logs" });
+  }
+};

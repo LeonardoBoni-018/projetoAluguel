@@ -82,17 +82,18 @@ export default function HomePage() {
         id_reserva: reserva.id_reserva,
         usuario_id: usuario?.id_usuario || usuario?.id || null,
       };
-      const res = await fetch("http://localhost:3000/reserva/excluir", {
+      const res = await fetch("http://localhost:3000/reservas/excluir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (data && data.status === "sucesso") {
-        // atualizar lista
+      const resposta = Array.isArray(data) ? data[0] : data;
+
+      if (resposta && resposta.status === "sucesso") {
         carregarMinhasReservas();
       } else {
-        alert(data.mensagem || "Erro ao excluir reserva");
+        alert(resposta.mensagem || "Erro ao excluir reserva");
       }
     } catch (err) {
       console.error("Erro ao excluir reserva:", err);
